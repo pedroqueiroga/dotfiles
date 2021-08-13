@@ -28,7 +28,7 @@ shopt -s checkwinsize
 #shopt -s globstar
 
 # make less more friendly for non-text input files, see lesspipe(1)
-[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+#[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
 # set variable identifying the chroot you work in (used in the prompt below)
 if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
@@ -57,28 +57,60 @@ if [ -n "$force_color_prompt" ]; then
     fi
 fi
 
-# if [ "$color_prompt" = yes ]; then
-#     PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
-# else
-#     PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
-# fi
-# unset color_prompt force_color_prompt
+export GIT_PS1_SHOWCOLORHINTS=true
+export GIT_PS1_SHOWDIRTYSTATE=true
+export GIT_PS1_SHOWUNTRACKEDFILES=true
+export GIT_PS1_SHOWUPSTREAM="auto"
 
-# # If this is an xterm set the title to user@host:dir
-# case "$TERM" in
-# xterm*|rxvt*)
-#     PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
-#     ;;
-# *)
-#     ;;
-# esac
+c_red="\[$(tput setaf 1)\]" # "\[\033[31m\]"
+c_green="\[$(tput setaf 34)\]" # "\[\033[32m\]"
+c_blue="\[$(tput setaf 21)\]"
+c_yellow="\[$(tput setaf 226)\]"
+c_bold="\[$(tput bold)\]"
+c_clear="\[$(tput sgr0)\]" # "\[\033[0m\]"
+c_dgreen="${c_bold}${c_green}" # "\[\033[1;32m\]"
+c_dblue="${c_bold}${c_blue}" # "\[\033[1;34m\]"
+c_dyellow="${c_bold}${c_yellow}"
+
+# If this is an xterm set the title to user@host:dir
+case "$TERM" in
+xterm*|rxvt*)
+    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+    ;;
+*)
+    ;;
+esac
+
+# Determine active Python virtualenv details.
+function get_virtualenv () {
+  if test -z "$VIRTUAL_ENV" ; then
+      local PYTHON_VIRTUALENV=""
+  else
+      local PYTHON_VIRTUALENV="($(basename "$VIRTUAL_ENV")) "
+  fi
+  echo "$PYTHON_VIRTUALENV"
+}
+
+# prompt command enables git_ps1 colors heheh
+if [ "$color_prompt" = yes ]; then
+    PROMPT_COMMAND='__git_ps1 "${debian_chroot:+($debian_chroot)}$(get_virtualenv)${c_dgreen}\u@\h${c_dblue}:${c_dyellow}\W${c_clear}" "$ "'
+else
+    PROMPT_COMMAND='__git_ps1 "\u@\h:\w" "\\\$ "'
+fi
+
+if [ "$color_prompt" = yes ]; then
+    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+else
+    PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+fi
+unset color_prompt force_color_prompt
 
 # enable color support of ls and also add handy aliases
 if [ -x /usr/bin/dircolors ]; then
     test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
     alias ls='ls --color=auto'
-    #alias dir='dir --color=auto'
-    #alias vdir='vdir --color=auto'
+    alias dir='dir --color=auto'
+    alias vdir='vdir --color=auto'
 
     alias grep='grep --color=auto'
     alias fgrep='fgrep --color=auto'
@@ -89,13 +121,9 @@ fi
 #export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
 # some more ls aliases
-alias ll='ls -alF'
+alias ll='ls -laF'
 alias la='ls -A'
 alias l='ls -CF'
-
-# Add an "alert" alias for long running commands.  Use like so:
-#   sleep 10; alert
-alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
 # Alias definitions.
 # You may want to put all your additions into a separate file like
@@ -117,63 +145,14 @@ if ! shopt -oq posix; then
   fi
 fi
 
-export QSYS_ROOTDIR="/home/pedro/altera/14.1/quartus/sopc_builder/bin"
-
-export ALTERAOCLSDKROOT="/home/pedro/altera/14.1/hld"
-
-export GPG_TTY=$(tty)
-
-
-source ~/.git-prompt.sh
-export GIT_PS1_SHOWCOLORHINTS=true
-export GIT_PS1_SHOWDIRTYSTATE=true
-export GIT_PS1_SHOWUNTRACKEDFILES=true
-export GIT_PS1_SHOWUPSTREAM="auto"
-
-c_red="\[$(tput setaf 1)\]" # "\[\033[31m\]"
-c_green="\[$(tput setaf 34)\]" # "\[\033[32m\]"
-c_blue="\[$(tput setaf 21)\]"
-c_yellow="\[$(tput setaf 226)\]"
-c_bold="\[$(tput bold)\]"
-c_clear="\[$(tput sgr0)\]" # "\[\033[0m\]"
-c_dgreen="${c_bold}${c_green}" # "\[\033[1;32m\]"
-c_dblue="${c_bold}${c_blue}" # "\[\033[1;34m\]"
-c_dyellow="${c_bold}${c_yellow}"
-
-
-# if [ "$color_prompt" = yes ]; then
-#     PS1="${debian_chroot:+($debian_chroot)}${c_dgreen}\u@\h${c_dblue}:${c_dyellow}\W${c_clear}"'$(__git_ps1 " (%s)")$ '
-# else
-#     PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w$(__git_ps1 " (%s)")$ '
-# fi
-# unset color_prompt force_color_prompt
-
-# If this is an xterm set the title to user@host:dir
-case "$TERM" in
-xterm*|rxvt*)
-    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
-    ;;
-*)
-    ;;
-esac
-
-# Determine active Python virtualenv details.
-function get_virtualenv () {
-  if test -z "$VIRTUAL_ENV" ; then
-      local PYTHON_VIRTUALENV=""
-  else
-      local PYTHON_VIRTUALENV="(`basename $VIRTUAL_ENV`) "
-  fi
-  echo "$PYTHON_VIRTUALENV"
-}
-
-# prompt command enables git_ps1 colors heheh
-if [ "$color_prompt" = yes ]; then
-    PROMPT_COMMAND='__git_ps1 "${debian_chroot:+($debian_chroot)}$(get_virtualenv)${c_dgreen}\u@\h${c_dblue}:${c_dyellow}\W${c_clear}" "$ "'
-else
-    PROMPT_COMMAND='__git_ps1 "\u@\h:\w" "\\\$ "'
-fi
-
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+eval "$(fasd --init auto)"
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+source /home/pedro/.config/broot/launcher/bash/br
